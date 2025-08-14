@@ -64,5 +64,37 @@ SELECT product_id, SUM(quantity) as totalQuantity FROM orders GROUP BY product_i
 SELECT * FROM orders WHERE order_date BETWEEN '2023-01-01' AND '2023-12-31';
 -- Use LIMIT to display any 3 products from the Electronics category
 SELECT * FROM products WHERE category = 'Electronics' LIMIT 3;
-
-
+-- list all orders with customer names and product names
+SELECT c.cust_name,p.product_name  FROM orders o JOIN customers c on o.customer_id = c.customer_id JOIN products p ON o.product_id = p.product_id;  
+-- find customers who never placed order
+SELECT c.cust_name FROM customers c JOIN  orders o ON  c.customer_id = o.customer_id WHERE  o.customer_id IS NULL;
+-- display all products ordered along with the customer name who ordered them
+select c.cust_name,p.product_name from orders o JOIN customers c on c.customer_id = o.customer_id join products p on p.product_id = o.product_id;
+-- show customer names and total quantity of all products they ordered
+select c.cust_name,SUM(quantity) as total_quantity from orders o join customers c on c.customer_id = o.customer_id GROUP BY c.cust_name;
+-- list order details along with product price and total amount for each order
+select o.order_id,c.cust_name,p.product_name,p.price,o.quantity,(p.price * o.quantity) as total_amount from orders o join customers c on o.customer_id = c.customer_id join products p on o.product_id = p.product_id;
+-- show all customers and their orders,including customers with no orders
+ select c.cust_name,o.order_id,p.product_name from customers c left join orders o on c.customer_id = o.customer_id left join products p on o.product_id = p.product_id;
+ -- find the most expensive product ordered and the name of the customer who ordered it
+ select c.cust_name,p.product_name,p.price from orders o join customers c on o.customer_id = c.customer_id join products p on o.product_id = p.product_id order by p.price desc limit 1;
+ -- show each customers name and the number of unique products they have ordered
+ select c.cust_name,count(distinct o.product_id) as unique_products from orders o join customers c on o.customer_id = c.customer_id group by c.cust_name;
+ -- list the names of customers who have ordered products from more than one category
+ select c.cust_name from customers c join orders o on c.customer_id = o.customer_id join products p on o.product_id = p.product_id group by c.cust_name having count(distinct p.category) > 1;
+ -- display total revenue generated per customer along with their names
+ alter table orders add column total_amount INT;
+ update orders set total_amount = 500 where order_id=1;
+ update orders set total_amount = 100000 where order_id=2;
+ update orders set total_amount = 10000 where order_id=3;
+ update orders set total_amount = 400 where order_id=4;
+ update orders set total_amount = 172500 where order_id=5;
+select c.cust_name,sum(o.total_amount) as total_revenue from customers c join orders o on c.customer_id = o.customer_id group by c.cust_name;
+-- list all customers and the details of their orders using LEFT JOIN
+select c.cust_name ,p.product_name from customers c left join orders o on c.customer_id = o.customer_id left join products p on o.product_id = p.product_id;
+-- list all orders including those that have products not listed in the products table using right join
+select p.product_name,c.cust_name from orders o join customers c on o.customer_id = c.customer_id right join products p on o.product_id = p.product_id;
+-- display all customer names and product names using full outer join 
+select c.cust_name,p.product_name from customers c left join products p on 1 = 1 union  select c.cust_name,p.product_name from products p left join customers c on 1 = 1 where c.cust_name IS NULL;
+-- generate a list of all possible customers-products combinations using CROSS JOIN
+select c.cust_name,p.product_name from customers c cross join products p;
