@@ -41,6 +41,7 @@ insert into patients values(11,'Salman khan','M','1999-01-01','Chennai','Tamil N
 insert into patients values(15,'Vaani Batra','F','2003-10-22','Benguluru','Karnataka','9090111190','O');
 insert into patients values(20,'Krish kapoor','M','1980-10-28','Kochi','Kerala','7877787778','AB');
 insert into patients values(1,'Kiara advani','F','2000-01-01','Kolkata','West Bangal','1001001000','A');
+
 select * from patients;
 insert into rooms values(1000,'General',700,'Occupied');
 insert into rooms values(1005,'Private',2000,'Available');
@@ -143,22 +144,135 @@ select a.appointment_id,a.appointment_date,p.patient_name,doc.doctor_name,d.dept
 join doctors doc on a.doctor_id = doc.doctor_id join departments d on a.dept_id = d.dept_id;
 alter table appointments add column dept_id int;
 alter table appointments add constraint fk foreign key (dept_id) references departments(dept_id);
+update appointments set dept_id = 1001 where appointment_id=21;
+update appointments set dept_id=1002 where appointment_id=22;
+ update appointments set dept_id=1003 where appointment_id=23;
+update appointments set dept_id=1004 where appointment_id=24;
+update appointments set dept_id=1005 where appointment_id=25;
+
 -- For each admission, show patient_name, room_type, admit_date, admitting_doctor_name.
 select a.admission_id,p.patient_name,r.room_type,a.admit_date,d.doctor_name from admissions a join patients p on a.admission_id=p.admission_id
 join rooms r on a.admission_id=r.admission_id join doctors d on a.admission_id=d.admission_id;
 alter table doctors add column admission_id int;
 alter table doctors add constraint f_k foreign key(admission_id) references admissions(admission_id);
+update doctors set admission_id = 901 where doctor_id=701;
+update doctors set admission_id = 902 where doctor_id=702;
+update doctors set admission_id = 903 where doctor_id=703;
+update doctors set admission_id = 904 where doctor_id=704;
+update doctors set admission_id = 905 where doctor_id=705;
+
 alter table rooms add column admission_id int;
 alter table rooms add constraint f_key foreign key(admission_id) references admissions(admission_id);
+update rooms set admission_id = 901 where room_id=1000;
+update rooms set admission_id = 902 where room_id=1005;
+update rooms set admission_id = 903 where room_id=1011;
+update rooms set admission_id = 904 where room_id=1021;
+update rooms set admission_id = 905 where room_id=999;
+select * from rooms;
 alter table patients add column admission_id int;
 alter table patients add constraint p_fk foreign key(admission_id) references admissions(admission_id);
+update patients set admission_id=901 where patient_id=9;
+update patients set admission_id=902 where patient_id=11;
+update patients set admission_id=903 where patient_id=15;
+update patients set admission_id=904 where patient_id=20;
+update patients set admission_id=905 where patient_id=1;
+select * from patients;
 -- List prescribed meds: appointment_id, med_name, dosage, frequency, days, unit_price.
 alter table medications add column appointment_id int;
 alter table medications add constraint m_fk foreign key (appointment_id)references appointments(appointment_id);
 select a.appointment_id,m.med_name,p.dosage,p.frequency,p.days,m.unit_price from priscriptions p  join appointments a on p.appointment_id=a.appointment_id
 join medications m on p.appointment_id=m.appointment_id;
+update medications set appointment_id=21 where med_id=31;
+update medications set appointment_id=22 where med_id=32;
+update medications set appointment_id=23 where med_id=33;
+update medications set appointment_id=24 where med_id=34;
+update medications set appointment_id=25 where med_id=35;
+select * from medications;
 -- Show lab test results with patient_name, doctor_name, test_name, result_value, status.
 select p.patient_name,d.doctor_name,l.test_name,lr.result_value,lr.status from lab_results lr join patients p on lr.patient_id = p.patient_id
 join doctors d on lr.doctor_id = d.doctor_id join lab_tests l on lr.test_id=l.test_id;
+alter table lab_results add column doctor_id int;
+update lab_results  set doctor_id=701 where result_id=91;
+update lab_results  set doctor_id=702 where result_id=92;
+update lab_results  set doctor_id=703 where result_id=93;
+update lab_results  set doctor_id=704 where result_id=94;
+update lab_results  set doctor_id=705 where result_id=95;
+select * from lab_results;
+alter table lab_results add column patient_id int;
+update lab_results  set patient_id=9 where result_id=91;
+update lab_results  set patient_id=11 where result_id=92;
+update lab_results  set patient_id=15 where result_id=93;
+update lab_results  set patient_id=20 where result_id=94;
+update lab_results  set patient_id=1 where result_id=95;
+select * from lab_results;
+-- For each bill, show patient_name and total successful payments (sum), default 0 if none.
+SELECT p.patient_name, COALESCE(SUM(pay.amount), 0) AS successful_payments FROM patients P LEFT JOIN bills b ON p.patient_id = b.patient_id
+LEFT JOIN payments pay ON b.bill_id = pay.bill_id AND pay.status = 'Success' GROUP BY p.patient_name;
+-- All doctors with count of appointments (0 if none).
+SELECT d.doctor_name, COUNT(a.appointment_id) AS count_of_appointment FROM doctors d LEFT JOIN appointments a ON d.doctor_id = a.doctor_id GROUP BY d.doctor_name;
+-- All patients with number of admissions (0 if none).
+select p.patient_name,count(a.admission_id) as count_of_admission from patients p left join admissions a on p.patient_id = a.patient_id group by p.patient_name;
+-- All bills and any matching payments (include bills without payments).
+select b.bill_id, b.total_amount as amount_of_bill, p.payment_id, p.amount as payment_amount from bills b left join payments p on b.bill_id = p.bill_id;
+-- Rooms vs Admissions to list rooms even if never used and admissions referencing missing room.
+select r.room_id,r.room_type,a.admission_id from rooms r left join admissions a on r.room_id = a.room_id union select r.room_id,r.room_type,
+a.admission_id from rooms r right join admissions a on r.room_id = a.room_id where r.room_id is null;
+-- List appointments that have no lab results.
+select a.appointment_id from appointments a left join lab_results l on a.appointment_id = l.appointment_id where l.appointment_id is null;
+-- For each doctor, show appointments in 2025, current inpatients, and dept_name.
+-- Sum bill totals for patients whose admitting_doctor belongs to that department.
+select d.dept_name, sum(b.total_amount) as total_amount from departments d join doctors doc on d.dept_id = doc.dept_id
+join patients p on doc.doctor_id = p.admitting_doctor_id join bills b on p.patient_id = b.patient_id GROUP BY d.dept_name;
+alter table patients add column admitting_doctor_id int;
+update patients set admitting_doctor_id=101 where patient_id=9;
+update patients set admitting_doctor_id=102 where patient_id=11;
+update patients set admitting_doctor_id=103 where patient_id=15;
+update patients set admitting_doctor_id=104 where patient_id=20;
+update patients set admitting_doctor_id=105 where patient_id=1;
+-- Compute total medicine value per patient in 2025 from prescriptions
+select p.patient_id, p.patient_name, sum(m.unit_price * pr.dosage * pr.days) as med_total from patients p join priscriptions pr on p.patient_id = pr.patient_id
+join medications m on pr.med_id = m.med_id group by p.patient_id, p.patient_name;
+alter table priscriptions add column patient_id int;
+update priscriptions set patient_id=9 where prescription_id=2001;
+update priscriptions set patient_id=11 where prescription_id=2002;
+update priscriptions set patient_id=15 where prescription_id=2003;
+update priscriptions set patient_id=20 where prescription_id=2004;
+update priscriptions set patient_id=1 where prescription_id=2005;
+-- For each test_id, show count of times ordered and total revenue.
+-- Find patients who had ≥ 2 admissions within 90 days
+-- calculate the daily room cost after applying a 12.5% tax for each room and display the final amount alongside room details
+select room_type,daily_rate,daily_rate * 0.125 as amt_tax,daily_rate + (daily_rate * 0.125) AS final_amount from rooms; 
+-- For each lab test, compute a discounted price by reducing 7.25% from the base price and show both original and discounted values
+select test_name,base_price,base_price * 0.0725 AS discount_amount,base_price - (base_price * 0.0725) as discount from lab_tests;
+-- Round the medication unit price to the nearest integer and also show the price rounded to two decimal places for comparison.
+select med_name,unit_price,ROUND(unit_price) as round_integer,ROUND(unit_price, 2) AS round_two_decimal from medications; 
+-- Show rooms where the daily_rate is not an exact multiple of 500 and display the remainder when divided by 500.
+select room_type,daily_rate,daily_rate % 500 as remainder from rooms where daily_rate % 500 != 0;
+-- For each bill, compute 18% tax on total_amount and display subtotal (without tax), tax amount, and grand total.
+select bill_id,total_amount as subtotal,total_amount * 0.18 as tax_amount,total_amount + (total_amount * 0.18) as grand_total from bills;
+-- Display the minimum, maximum, and average daily_rate for each room_type, with the average rounded up to the next whole number.
+select room_type,MIN(daily_rate) as min_daily_rate,MAX(daily_rate) as max_daily_rate,CEIL(AVG(daily_rate)) as avg_daily_rate from rooms group by room_type;
+-- Show medications where the square of the unit price exceeds 250000; include the squared value in the output.
+select med_name,unit_price,power(unit_price,2) as square from medications where power(unit_price,2)>250000;
+-- List lab tests with the square root of their base_price (rounded to 3 decimal places).
+select test_name,base_price, round(sqrt(base_price),3) as sqrt_price from lab_tests; 
+-- Classify rooms as 'High Rate', 'Medium Rate', or 'Low Rate' based on daily_rate thresholds of your choice and display the label. Show the ceiling and floor values of each medication’s unit_price in separate columns.
+SELECT room_type,daily_rate ,case when daily_rate > 10000 then 'High Rate' when daily_rate between 5000 and 10000 then 'Medium rate' else 'Low rate' end as label, ceil(daily_rate) as ceiled_rate ,floor(daily_rate) as floor_rate from rooms;
+-- For each bill, calculate the effective per-day cost by dividing total_amount by the length of stay of the patient’s latest admission (skip if no discharge date).
+select bill_id,total_amount,datediff(discharge_date,admit_date) as length_of_stay,total_amount/datediff(discharge_date,admit_date) as 
+effective_cost_per_day from bills where discharge_date is not null;
+-- Display only those bills where total_amount / 1000 leaves a remainder > 500 and show that remainder.
+select bill_id,total_amount,mod(total_amount, 1000) as remainder from bills where mod(total_amount,1000)>500;
+-- Display doctor names prefixed with Dr. only if the prefix is not already present; otherwise keep the name unchanged.
+select case when doctor_name like 'Dr.%' then doctor_name else 'Dr. ' || doctor_name end as doctor_name from doctors;
+-- Build a standardized room label in the form <room_type>-<room_id> with room_id zero-padded to 4 digits (e.g., ICU-0042)
+select concat(room_type, '-', LPAD(room_id, 4, '0')) as label from rooms;
+-- Show department names where the second word (if any) starts with Care; display only that second word.
+select substring_index(substring_index(dept_name,' ' ,2),' ' ,-1) as second_word from departments where substring_index(substring_index(dept_name,' ' ,2),' ',-1 like 'Care%');
 
+
+-- Show appointments where the reason text exceeds 30 characters and also display the first 30 characters followed by ... as a preview.
+select appointment_id,reason,left(reason,30)+'.....' as preview from appointments where length(reason) > 30;
+-- For each department, pad the dept_name on the right with . so that the total length becomes 20 characters.
+select rpad(dept_name,20,'.') as department_padded_name from departments;
 
