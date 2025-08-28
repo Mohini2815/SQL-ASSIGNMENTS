@@ -75,8 +75,45 @@ select patient_id,patient_name,floor(datediff(curdate(),dob) / 365.25) as age_in
 select month(appointment_date) as month_number,count(*) as appointment_count from appointments where year(appointment_date) = year(curdate()) group by month(appointment_date)
 order by month_number;
 -- show payments grouped by quarter of the current year with total amount
-select quarter(payment_date) as quarter_date, sum(amount) as total_amount from payments where year(payment_date) = year(curdate()) group by
-quarter(payment_date) order by quarter_date;
+select quarter(payment_date) as quarter_date,sum(amount) as total_amount from payments where year(payment_date) = year(payment_date)
+group by quarter(payment_date) order by quarter_date;
 -- list admissions grouped by room_type and year(admit_date) with counts per group
-select admission_id,
+select r.room_type,year(a.admit_date) as admit_year,count(*) as admission_count from admissions a join rooms r on a.room_id = r.room_id 
+group by r.room_type,year(a.admit_date) order by r.room_type,admit_year; 
 -- for bills compute total amount per week for the last 8 weeks(show year-week label and sum)
+select concat(year(bill_date),'-W',week(bill_date)) as y_w_label,sum(total_amount) as total from bills where bill_date >= now() - interval 8
+week group by concat(year(bill_date)),week(bill_date) order by y_w_label desc LIMIT 0, 1000; 
+-- Produce a calendar label for each appointment in the format YYYY-MM along with appointment count for that label.
+select date_format(appointment_date,'%Y-%m') as calender_label,count(*) as appointment_count from appointments group by date_format(appointment_date,'%Y-%m')
+order by calender_label;
+-- list admissions where discharge_date is earlier than admit_date
+select * from  admissions where discharge_date < admit_date;
+-- Find appointments whose appointment_date is NULL or in the past
+select * from appointments where appointment_date is null or appointment_date < curdate();
+-- List bills where bill_date is in the future
+select * from bills where bill_date > curdate();
+-- Show lab results where result_date does not fall within 60 days before or after the related appointment_date
+select * from lab_results l join appointments a on l.appointment_id = a.appointment_id where l.result_date < a.appointment_date - interval
+60 day or l.result_date > a.appointment_date + interval 60 day; 
+-- show patients who were admitted in january of any year
+select p.patient_name,a.admit_date from patients p join admissions a  on p.patient_id = a.patient_id where month(a.admit_date) = 1;
+-- list appointments that occurred in the second half of the year(july-december).
+select appointment_id,appointment_date from appointments where month(appointment_date) between 7 and 12;
+-- display payments along with the day number of the year(1-365)
+select payment_id,payment_date,day(payment_date) as payment_day from payments;
+-- find the youngest patient in hospital using dob
+select patient_id,patient_name,dob from patients order by dob desc limit 1;
+-- show all latest discharge_date from all admissions
+select max(discharge_date) as latest_date from admissions;
+-- display appointments that happened within the same week as today
+select * from appointments where week(appointment_date) = week(curdate()) and year(appointment_date) = year(curdate());
+-- find patients who are exactly 25 years old today
+select * from patients where timestampdiff(year,dob,curdate()) = 25;
+-- show lab results done within the last quarter
+select * from lab_results where result_date >= now() - interval 3 month;
+-- display bills grouped by dayname with counts
+select dayname(bill_date) as wwek_day,count(*) as count from bills group by dayname(bill_date);
+-- loist all appointments where the appointment_date is totad + 3 days.
+select * from appointments where appointment_date = curdate() + interval 3 day; 
+
+   
