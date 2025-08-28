@@ -36,7 +36,7 @@ select patient_name,case when gender = 'F' then 'Female Patient' when gender = '
 -- Display patient names in the format: 'Last 2 letters in uppercase + remaining in lowercase'.
 select concat(lower(substring(patient_name,1,length(patient_name)-2)), upper(substring(patient_name,-2))) from patients;
 -- From each department name, extract only the first word.
-
+select dept_name,substr(dept_name,1,1) as first_letter from departments;
 -- Find the longest patient name in the database.
 select patient_name,length(patient_name)from patients where length(patient_name) = (select max(length(patient_name)) from patients);
 -- List appointments scheduled today.
