@@ -115,5 +115,27 @@ select * from lab_results where result_date >= now() - interval 3 month;
 select dayname(bill_date) as wwek_day,count(*) as count from bills group by dayname(bill_date);
 -- loist all appointments where the appointment_date is totad + 3 days.
 select * from appointments where appointment_date = curdate() + interval 3 day; 
+-- show bills where total_amount is the highest among all bills
+select * from bills where total_amount = (select max(total_amount) from bills);
+-- find the top 5 most expensive medications using unit price
+select med_name,unit_price from medications order by unit_price desc limit 5;
+-- Display rooms where the daily_rate is below the hospital-wide average daily_rate
+select room_id,daily_rate from rooms where daily_rate < (select avg(daily_rate) from rooms);
+-- Compute the cube root of each lab test’s base_price
+select base_price,power(base_price,1/3) as cube_root from lab_tests;
+-- display patients whose calculated age is a even number
+select * from patients where (timestampdiff(year,dob,curdate()) + 1) % 2 = 0;
+-- for each doctor show how many appointments they have as a percentage of total appointments(rounded).
+select d.doctor_id,d.doctor_name,count(a.appointment_id) as appointment_count,
+round(count(a.appointment_id) * 100.0 /sum(count(a.appointment_id)) over()) 
+as percentage from appointments a join doctors d on a.doctor_id = d.doctor_id group by d.doctor_name,d.doctor_id ;
+-- show bills where the total_amount is divisible by 9
+select * from bills where total_amount % 9;
+-- display the absolute difference in total_amount between the largest and smallest bill
+select abs(max(total_amount) - min(total_amount)) as difference_largest_to_smallest from bills;
+-- for rach room show the ratio:daily_rate / max(daily_rate) across all rooms
+select room_id,daily_rate ,daily_rate / (select max(daily_rate) from rooms) as ratio from rooms;
+-- show medications with their price rounded to the nearest multiple of 25 
+select med_id,med_name,round(unit_price/25) * 25 as rounded_price from medications;
 
    
